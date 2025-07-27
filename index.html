@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>European Refugee Sentiment Map</title>
+  <title>Key concerns</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -16,466 +16,269 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      background: #0E1014;
-      color: #e5e7eb;
-      font-family: system-ui, sans-serif;
-    }
-    #map {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100vh;
-      z-index: 1; /* Ensure map is below UI elements */
-    }
-    .leaflet-container {
-      background: #0E1014;
-    }
+    html,body{height:100%;margin:0;background:#0E1014;color:#e5e7eb;font-family:system-ui,sans-serif}
+    #map{position:absolute;top:0;left:0;width:100%;height:100vh;z-index:1}
+    .leaflet-container{background:#0E1014}
 
-    .panel {
-      width: 58vw;
-      max-width: 42rem;
-      background: #3C3F42E6;
-      border: 1px solid #555;
-      border-radius: 1rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-      padding: 1rem;
-      backdrop-filter: blur(4px);
-    }
+    .panel{width:58vw;max-width:42rem;background:#3C3F42E6;border:1px solid #555;border-radius:1rem;
+           box-shadow:0 4px 12px rgba(0,0,0,.6);padding:1rem;backdrop-filter:blur(4px)}
 
-    select {
-      background: #1f2126;
-      color: #e5e7eb;
-      border: 1px solid #4b5563;
-      padding: .5rem;
-      border-radius: .5rem;
-      width: 100%;
-    }
-    select:disabled {
-      background: #3a3a3a;
-      color: #888;
-      cursor: not-allowed;
-    }
+    select{background:#1f2126;color:#e5e7eb;border:1px solid #4b5563;padding:.5rem;border-radius:.5rem;width:100%}
+    select:disabled{background:#3a3a3a;color:#888;cursor:not-allowed}
 
-    button {
-      background: #59869B;
-      border-radius: .75rem;
-      padding: .5rem 1rem;
-      box-shadow: inset 0 0 2px #0006, 0 2px 4px #0008;
-      color: #fff;
-      transition: background-color .18s ease, color .18s ease;
-    }
-    button:hover {
-      background: #D3E3FD;
-      color: #0E1014;
-    }
+    button{background:#59869B;border-radius:.75rem;padding:.5rem 1rem;
+           box-shadow:inset 0 0 2px #0006,0 2px 4px #0008;color:#fff;transition:background .18s,color .18s}
+    button:hover{background:#D3E3FD;color:#0E1014}
 
-    #d1 {
-      line-height: 1.75rem;
-      padding-left: 2rem;
-    }
+    #d1{line-height:1.75rem;padding-left:2rem}
+    #toggle-sheet{position:absolute;top:1rem;right:1rem;z-index:1000;background:#0365D0;color:#fff;border-radius:.5rem;
+                  padding:.25rem 1rem;transition:background .18s}
+    #toggle-sheet:hover{background:#0258B9}
 
-    #toggle-sheet {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      z-index: 1000;
-      background: #0365D0;
-      color: #fff;
-      border-radius: .5rem;
-      padding: .25rem 1rem;
-      transition: background .18s;
-    }
-    #toggle-sheet:hover {
-      background: #0258B9;
-    }
+    .animated-line{stroke:url(#lineGradient);stroke-width:3;stroke-opacity:.8;stroke-dasharray:10 10;
+                   animation:dash 1.5s linear infinite}
+    @keyframes dash{to{stroke-dashoffset:-20}}
 
-    .animated-line {
-      stroke: url(#lineGradient);
-      stroke-width: 3;
-      stroke-opacity: 0.8;
-      stroke-dasharray: 10, 10;
-      animation: dash 1.5s linear infinite;
-    }
-    @keyframes dash {
-      to { stroke-dashoffset: -20; }
-    }
-
-    /* Tooltip styling */
-    .leaflet-tooltip {
-      background-color: #2F3239E6;
-      color: #e5e7eb;
-      border: 1px solid #555;
-      border-radius: .5rem;
-      padding: .5rem;
-      font-size: 0.9rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-    }
-
-    /* Prevent default Leaflet selection rectangle */
-    .leaflet-interactive:focus {
-      outline: none;
-    }
+    .leaflet-tooltip{background:#2F3239E6;color:#e5e7eb;border:1px solid #555;border-radius:.5rem;padding:.5rem;
+                     font-size:.9rem;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+    .leaflet-interactive:focus{outline:none}
   </style>
 </head>
 <body>
-  <div id="map"></div>
+<div id="map"></div>
 
-  <!-- Legend -->
-  <div class="absolute bottom-4 right-4 bg-[#2F3239E6] rounded-md px-3 py-2 text-sm flex items-center space-x-2 z-[1000]">
-    <span class="block w-4 h-4 rounded-sm" style="background:#C6DCF1"></span>
-    <span>Selectable country</span>
+<!-- Legend -->
+<div class="absolute bottom-4 right-4 bg-[#2F3239E6] rounded-md px-3 py-2 text-sm flex items-center space-x-2 z-[1000]">
+  <span class="block w-4 h-4 rounded-sm" style="background:#C6DCF1"></span><span>Selectable country</span>
+</div>
+
+<!-- Footer -->
+<div class="absolute bottom-2 left-4 text-[10px] text-gray-400 z-[1000] leading-snug">
+  © 2025 Zhihao Liu, Department of Geography, The University of Hong Kong.<br>
+  This website visualizes the core concerns in bilateral relations among the EU and its neighboring countries in the context of refugee movements.
+</div>
+
+<button id="toggle-sheet">Switch to Hate Speech</button>
+
+<!-- Panels -->
+<div class="absolute top-4 left-4 space-y-4 z-[1000]">
+  <!-- Filters -->
+  <div id="controls" class="panel space-y-3">
+    <div class="space-y-1"><label class="text-sm font-medium">1. Tweets Origin</label><select id="origin"><option>Select</option></select></div>
+    <div class="space-y-1"><label class="text-sm font-medium">2. Mentioned Country</label><select id="mentioned" disabled><option>Select</option></select></div>
+    <div class="space-y-1"><label class="text-sm font-medium">3. Period</label><select id="period" disabled><option>Select</option></select></div>
+    <div class="space-y-1"><label id="category-label" class="text-sm font-medium">4. Sentiment</label><select id="category" disabled><option>Select</option></select></div>
+    <button id="clear" class="w-full">Reset</button><p id="hint" class="text-xs text-red-400 hidden"></p>
   </div>
 
-  <!-- Footer Note -->
-  <div class="absolute bottom-2 left-4 text-[10px] text-gray-400 z-[1000] leading-snug">
-    © 2025 Zhihao Liu, Department of Geography, The University of Hong Kong.<br>
-    This website visualizes the core concerns in bilateral relations among the EU and its neighboring countries in the context of refugee movements.
-  </div>
+  <!-- Core Concerns -->
+  <div id="summary" class="panel space-y-3 hidden"><h2 class="text-lg font-semibold">Core Concerns</h2><p id="d1" class="text-xl italic leading-relaxed"></p></div>
 
-  <!-- Toggle Button -->
-  <button id="toggle-sheet">Switch to Hate Speech</button>
+  <!-- Keywords -->
+  <div id="keywordsBox" class="panel space-y-3 hidden"><h2 class="text-lg font-semibold">Keywords</h2><p id="kw" class="text-lg leading-relaxed"></p></div>
+</div>
 
-  <!-- Panels -->
-  <div class="absolute top-4 left-4 space-y-4 z-[1000]">
-    <!-- Filters -->
-    <div id="controls" class="panel space-y-3">
-      <div class="space-y-1">
-        <label class="text-sm font-medium">1. Tweets Origin</label>
-        <select id="origin"><option>Select</option></select>
-      </div>
-      <div class="space-y-1">
-        <label class="text-sm font-medium">2. Mentioned Country</label>
-        <select id="mentioned" disabled><option>Select</option></select>
-      </div>
-      <div class="space-y-1">
-        <label class="text-sm font-medium">3. Period</label>
-        <select id="period" disabled><option>Select</option></select>
-      </div>
-      <div class="space-y-1">
-        <label id="category-label" class="text-sm font-medium">4. Sentiment</label>
-        <select id="category" disabled><option>Select</option></select>
-      </div>
-      <button id="clear" class="w-full">Reset</button>
-      <p id="hint" class="text-xs text-red-400 hidden"></p>
-    </div>
+<script>
+/* =============== Constants & helpers =============== */
+const PATHS = {
+  EXCEL:'./Summary_sentiment.xlsx',
+  GEO:'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json'
+};
+const COLORS={BASE:'#2F3239',SEL:'#C6DCF1',SEL_HOVER:'#007AFF',HL:'#007AFF',LINE:'#fff'};
 
-    <!-- Core Concerns -->
-    <div id="summary" class="panel space-y-3 hidden">
-      <h2 class="text-lg font-semibold">Core Concerns</h2>
-      <p id="d1" class="text-xl italic leading-relaxed"></p>
-    </div>
+/* GeoJSON→标准国名映射 */
+const countryNameMap={
+  "Republic of Serbia":"Serbia",
+  "Russian Federation":"Russia"  // 便于匹配
+};
 
-    <!-- Keywords -->
-    <div id="keywordsBox" class="panel space-y-3 hidden">
-      <h2 class="text-lg font-semibold">Keywords</h2>
-      <p id="kw" class="text-lg leading-relaxed"></p>
-    </div>
-  </div>
+/* 仅保留必要 override：俄罗斯取莫斯科 */
+const centroidOverride={
+  "Russia":[55.7558,37.6176]
+};
 
-  <script>
-    const PATHS = {
-      EXCEL: './Summary_sentiment.xlsx',
-      GEO: 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json'
-    };
-    const COLORS = {
-      BASE: '#2F3239',
-      SEL: '#C6DCF1',
-      SEL_HOVER: '#007AFF',
-      HL: '#007AFF',
-      LINE: '#fff'
-    };
-
-    // Country centroids for flow lines
-    const countryCentroids = {
-      "Armenia": [40.0691, 45.0382], "Austria": [47.5162, 14.5501],
-      "Serbia": [44.0165, 21.0059], "Slovakia": [48.6690, 19.6990],
-      "Spain": [40.4637, -3.7492], "Sweden": [60.1282, 18.6435],
-      "Switzerland": [46.8182, 8.2275], "Turkey": [38.9637, 35.2433],
-      "Ukraine": [48.3794, 31.1656], "United Kingdom": [55.3781, -3.4360]
-    };
-
-    // Map GeoJSON name → our standard name
-    const countryNameMap = {
-      "Republic of Serbia": "Serbia"
-    };
-
-    let map, countriesLayer, data = [], readyGeo = false, readyData = false;
-    let currentSheet = 'Sentiment', flowLine = null, currentOrigin = null, currentMentioned = null;
-
-    const $ = id => document.getElementById(id);
-    const dom = {
-      o: $('origin'), m: $('mentioned'), p: $('period'),
-      c: $('category'), categoryLabel: $('category-label'),
-      sum: $('summary'), d1: $('d1'),
-      kwBox: $('keywordsBox'), kw: $('kw'),
-      hint: $('hint'), clr: $('clear'),
-      toggle: $('toggle-sheet')
-    };
-
-    const uniq = a => [...new Set(a)].sort();
-    const resetSelect = (el, list = []) => {
-      el.innerHTML = '<option>Select</option>' + list.map(v => `<option>${v}</option>`).join('');
-      el.disabled = !list.length;
-    };
-    const fail = msg => {
-      dom.hint.textContent = msg;
-      dom.hint.classList.remove('hidden');
-    };
-
-    function initMap() {
-      const mapContainer = document.getElementById('map');
-      if (!mapContainer) {
-        console.error('Map container not found!');
-        return fail('Map container not found');
-      }
-
-      map = L.map('map', {
-        zoomControl: false,
-        dragging: false,
-        scrollWheelZoom: false,
-        doubleClickZoom: false,
-        boxZoom: false,
-        touchZoom: false,
-        keyboard: false,
-        attributionControl: false
-      }).setView([54, 15], 4);
-
-      // Add SVG gradient defs for animated line
-      const svgNS = "http://www.w3.org/2000/svg";
-      const svg = document.createElementNS(svgNS, "svg");
-      svg.setAttribute("width", 0);
-      svg.setAttribute("height", 0);
-      svg.innerHTML = `<defs>
-        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color:#00f;stop-opacity:1"/>
-          <stop offset="100%" style="stop-color:#0ff;stop-opacity:1"/>
-        </linearGradient>
-      </defs>`;
-      document.body.appendChild(svg);
-
-      fetch(PATHS.GEO)
-        .then(r => {
-          if (!r.ok) throw new Error('Failed to load GeoJSON');
-          return r.json();
-        })
-        .then(geo => {
-          countriesLayer = L.geoJSON(geo, {
-            style: () => ({ color: COLORS.LINE, weight: 1, fillColor: COLORS.BASE, fillOpacity: 0.8 }),
-            onEachFeature: (feature, layer) => {
-              const name = feature.properties.name;
-              const stdName = countryNameMap[name] || name;
-              layer.options.stdName = stdName;
-              layer.bindTooltip(stdName, {
-                permanent: false,
-                direction: 'auto',
-                sticky: true,
-                className: 'leaflet-tooltip'
-              });
-              layer.on({
-                mouseover: e => {
-                  if (layer.options.isSelectable && !layer.options.isChosen)
-                    e.target.setStyle({ fillColor: COLORS.SEL_HOVER });
-                },
-                mouseout: e => {
-                  if (layer.options.isSelectable && !layer.options.isChosen)
-                    e.target.setStyle({ fillColor: COLORS.SEL });
-                },
-                click: e => {
-                  L.DomEvent.stopPropagation(e); // Prevent default Leaflet behavior
-                  countryClick(stdName);
-                }
-              });
-            }
-          }).addTo(map);
-          map.panBy([-220, -50]);
-          readyGeo = true;
-          maybeInit();
-        })
-        .catch(e => {
-          console.error('GeoJSON fetch error:', e.message);
-          fail('Failed to load map data');
-        });
-
-      setTimeout(() => map.invalidateSize(), 100);
+/* ---------- 计算几何中心 ---------- */
+function getCentroid(name){
+  if(centroidOverride[name]) return centroidOverride[name];
+  let center=null;
+  countriesLayer.eachLayer(l=>{
+    if((l.options.stdName||l.feature.properties.name)===name){
+      const c=l.getBounds().getCenter();
+      center=[c.lat,c.lng];
     }
+  });
+  return center;
+}
 
-    function loadExcel() {
-      fetch(PATHS.EXCEL)
-        .then(r => {
-          if (!r.ok) throw new Error('Failed to load Excel file');
-          return r.arrayBuffer();
-        })
-        .then(buf => {
-          const wb = XLSX.read(buf, { type: 'array' });
-          const ws1 = wb.Sheets['Summary by sentiment'];
-          const ws2 = wb.Sheets['Summary by hate speech'];
-          if (!ws1 || !ws2) return fail(`Missing sheets. Found: ${wb.SheetNames.join(', ')}`);
-          const sent = XLSX.utils.sheet_to_json(ws1, { range: 1 }).map(r => ({
-            o: (r['Tweets Origin'] || '').trim(),
-            m: (r['Mentioned Country'] || '').trim(),
-            p: (r['Period'] || '').trim(),
-            s: (r['Sentiment'] || '').trim(),
-            d1: r['Summary_o4-mini-2025-04-16'] || '',
-            kw: (r['Keywords'] || '').trim()
-          })).filter(r => r.o && r.m && r.p && r.s);
-          const hate = XLSX.utils.sheet_to_json(ws2, { range: 1 }).map(r => ({
-            o: (r['Tweets Origin'] || '').trim(),
-            m: (r['Mentioned Country'] || '').trim(),
-            p: (r['Period'] || '').trim(),
-            s: (r['Hate speech'] || '').trim(),
-            d1: r['Summary_o4-mini-2025-04-16'] || '',
-            kw: (r['Keywords'] || '').trim()
-          })).filter(r => r.o && r.m && r.p && r.s);
-          if (!sent.length || !hate.length) return fail('No valid data rows');
-          data = currentSheet === 'Sentiment' ? sent : hate;
-          data.forEach(d => {
-            d.o = countryCentroids[d.o] ? d.o : (countryNameMap[d.o] || d.o);
-            d.m = countryCentroids[d.m] ? d.m : (countryNameMap[d.m] || d.m);
+/* ---------- 画/删 流向线 ---------- */
+let flowLine=null;
+function drawFlowLine(o,d){
+  removeFlowLine();
+  const start=getCentroid(o),end=getCentroid(d);
+  if(!start||!end) return;
+  flowLine=L.polyline([start,end],{
+    pane:'lines',
+    className:'animated-line',
+    interactive:false
+  }).addTo(map);
+}
+function removeFlowLine(){ if(flowLine){map.removeLayer(flowLine);flowLine=null;} }
+
+/* -------------- Variables -------------- */
+let map,countriesLayer,data=[],readyGeo=false,readyData=false;
+let currentSheet='Sentiment';
+
+const $=id=>document.getElementById(id);
+const dom={o:$('origin'),m:$('mentioned'),p:$('period'),c:$('category'),categoryLabel:$('category-label'),
+           sum:$('summary'),d1:$('d1'),kwBox:$('keywordsBox'),kw:$('kw'),
+           hint:$('hint'),clr:$('clear'),toggle:$('toggle-sheet')};
+
+const uniq=a=>[...new Set(a)].sort();
+const resetSelect=(el,list=[])=>{
+  el.innerHTML='<option>Select</option>'+list.map(v=>`<option>${v}</option>`).join('');
+  el.disabled=!list.length;
+};
+const fail=msg=>{dom.hint.textContent=msg;dom.hint.classList.remove('hidden');};
+
+/* =============== Map init =============== */
+function initMap(){
+  map=L.map('map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,
+                   boxZoom:false,touchZoom:false,keyboard:false,attributionControl:false})
+          .setView([54,15],4);
+
+  map.createPane('lines');map.getPane('lines').style.zIndex=600;
+
+  /* SVG gradient for animated line */
+  const svgNS="http://www.w3.org/2000/svg";
+  const svg=document.createElementNS(svgNS,"svg");
+  svg.setAttribute("width",0);svg.setAttribute("height",0);
+  svg.innerHTML=`<defs>
+      <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#00f;stop-opacity:1"/>
+        <stop offset="100%" style="stop-color:#0ff;stop-opacity:1"/>
+      </linearGradient>
+    </defs>`;
+  document.body.appendChild(svg);
+
+  fetch(PATHS.GEO).then(r=>{if(!r.ok)throw new Error('GeoJSON');return r.json();})
+    .then(geo=>{
+      countriesLayer=L.geoJSON(geo,{
+        style:()=>({color:COLORS.LINE,weight:1,fillColor:COLORS.BASE,fillOpacity:.8}),
+        onEachFeature:(f,l)=>{
+          const raw=f.properties.name;
+          const std=countryNameMap[raw]||raw;
+          l.options.stdName=std;
+          l.bindTooltip(std,{permanent:false,sticky:true,className:'leaflet-tooltip'});
+          l.on({
+            mouseover:e=>{if(l.options.isSelectable&&!l.options.isChosen) e.target.setStyle({fillColor:COLORS.SEL_HOVER});},
+            mouseout:e=>{if(l.options.isSelectable&&!l.options.isChosen) e.target.setStyle({fillColor:COLORS.SEL});},
+            click:e=>{L.DomEvent.stopPropagation(e);countryClick(std);}
           });
-          readyData = true;
-          updateCategoryLabel();
-          maybeInit();
-        })
-        .catch(e => fail('Excel load error: ' + e.message));
-    }
-
-    function updateCategoryLabel() {
-      dom.categoryLabel.textContent = currentSheet === 'Sentiment' ? '4. Sentiment' : '4. Hate Speech';
-      dom.toggle.textContent = currentSheet === 'Sentiment' ? 'Switch to Hate Speech' : 'Switch to Sentiment';
-    }
-
-    function maybeInit() {
-      if (!readyGeo || !readyData) return;
-      resetSelect(dom.o, uniq(data.map(d => d.o)));
-      dom.o.onchange = onO;
-      dom.m.onchange = onM;
-      dom.p.onchange = onP;
-      dom.c.onchange = onC;
-      dom.clr.onclick = resetAll;
-      dom.toggle.onclick = toggleSheet;
-      paintMap();
-    }
-
-    function resetLower(l) {
-      if (l <= 2) {
-        resetSelect(dom.m);
-        removeFlowLine();
-        currentOrigin = null;
-        currentMentioned = null;
-      }
-      if (l <= 3) resetSelect(dom.p);
-      if (l <= 4) {
-        resetSelect(dom.c);
-        dom.sum.classList.add('hidden');
-        dom.kwBox.classList.add('hidden');
-      }
-    }
-    const resetAll = () => {
-      dom.o.value = 'Select';
-      resetLower(1);
-      paintMap();
-    };
-
-    function onO() {
-      if (dom.o.value === 'Select') return resetLower(1);
-      resetLower(2);
-      resetSelect(dom.m, uniq(data.filter(d => d.o === dom.o.value).map(d => d.m)));
-      paintMap();
-    }
-    function onM() {
-      if (dom.m.value === 'Select') return resetLower(2);
-      resetLower(3);
-      resetSelect(dom.p, uniq(data.filter(d => d.o === dom.o.value && d.m === dom.m.value).map(d => d.p)));
-      paintMap();
-    }
-    function onP() {
-      if (dom.p.value === 'Select') return resetLower(3);
-      resetLower(4);
-      resetSelect(dom.c, uniq(data.filter(d => d.o === dom.o.value && d.m === dom.m.value && d.p === dom.p.value).map(d => d.s)));
-      paintMap();
-    }
-    function onC() {
-      if (dom.c.value === 'Select') return;
-      const rec = data.find(d => d.o === dom.o.value && d.m === dom.m.value && d.p === dom.p.value && d.s === dom.c.value);
-      dom.d1.textContent = rec ? `“${rec.d1}”` : '';
-      dom.kw.textContent = rec ? rec.kw : '';
-      dom.sum.classList.remove('hidden');
-      dom.kwBox.classList.remove('hidden');
-      paintMap();
-    }
-
-    function toggleSheet() {
-      currentSheet = currentSheet === 'Sentiment' ? 'Hate Speech' : 'Sentiment';
-      readyData = false;
-      data = [];
-      removeFlowLine();
-      currentOrigin = null;
-      currentMentioned = null;
-      resetAll();
-      updateCategoryLabel();
-      loadExcel();
-    }
-
-    function removeFlowLine() {
-      if (flowLine) {
-        map.removeLayer(flowLine);
-        flowLine = null;
-      }
-    }
-
-    function paintMap() {
-      const o = dom.o.value, m = dom.m.value;
-      const stage = o === 'Select' ? 0 : (m === 'Select' ? 1 : 2);
-
-      countriesLayer.eachLayer(layer => {
-        const n = layer.options.stdName || layer.feature.properties.name;
-        let fill = COLORS.BASE, weight = 1;
-        layer.options.isSelectable = false;
-        layer.options.isChosen = false;
-
-        if (stage === 0 && data.some(d => d.o === n)) {
-          fill = COLORS.SEL;
-          layer.options.isSelectable = true;
-        } else if (stage === 1) {
-          if (n === o) {
-            fill = COLORS.HL;
-            weight = 3;
-            layer.options.isChosen = true;
-          } else if (data.some(d => d.o === o && d.m === n)) {
-            fill = COLORS.SEL;
-            layer.options.isSelectable = true;
-          }
-        } else if (stage === 2 && (n === o || n === m)) {
-          fill = COLORS.HL;
-          weight = 3;
-          layer.options.isChosen = true;
         }
+      }).addTo(map);
+      map.panBy([-220,-50]);
+      readyGeo=true;maybeInit();
+    }).catch(()=>fail('Failed to load map'));
+  setTimeout(()=>map.invalidateSize(),100);
+}
 
-        layer.setStyle({ fillColor: fill, weight });
+/* =============== Excel load =============== */
+function loadExcel(){
+  fetch(PATHS.EXCEL).then(r=>{if(!r.ok)throw new Error('Excel');return r.arrayBuffer();})
+    .then(buf=>{
+      const wb=XLSX.read(buf,{type:'array'});
+      const ws1=wb.Sheets['Summary by sentiment'],ws2=wb.Sheets['Summary by hate speech'];
+      if(!ws1||!ws2)return fail('Missing sheets');
+      const parse=(ws,field)=>XLSX.utils.sheet_to_json(ws,{range:1}).map(r=>({
+        o:(r['Tweets Origin']||'').trim(),
+        m:(r['Mentioned Country']||'').trim(),
+        p:(r['Period']||'').trim(),
+        s:(r[field]||'').trim(),
+        d1:r['Summary_o4-mini-2025-04-16']||'',
+        kw:(r['Keywords']||'').trim()
+      })).filter(r=>r.o&&r.m&&r.p&&r.s);
+
+      const sent=parse(ws1,'Sentiment'),hate=parse(ws2,'Hate speech');
+      if(!sent.length||!hate.length)return fail('Empty rows');
+
+      data=currentSheet==='Sentiment'?sent:hate;
+      data.forEach(d=>{
+        d.o=countryNameMap[d.o]||d.o;
+        d.m=countryNameMap[d.m]||d.m;
       });
-    }
+      readyData=true;updateLabel();maybeInit();
+    }).catch(e=>fail('Excel error: '+e.message));
+}
+const updateLabel=()=>{
+  dom.categoryLabel.textContent=currentSheet==='Sentiment'?'4. Sentiment':'4. Hate Speech';
+  dom.toggle.textContent=currentSheet==='Sentiment'?'Switch to Hate Speech':'Switch to Sentiment';
+};
 
-    function countryClick(n) {
-      if (dom.c.value !== 'Select') return;
-      if (dom.o.value === 'Select' && [...dom.o.options].some(o => o.text === n)) {
-        dom.o.value = n;
-        onO();
-        return;
-      }
-      if (dom.m.value === 'Select' && [...dom.m.options].some(o => o.text === n)) {
-        dom.m.value = n;
-        onM();
-      }
-    }
+/* =============== UI init =============== */
+function maybeInit(){
+  if(!readyGeo||!readyData)return;
+  resetSelect(dom.o,uniq(data.map(d=>d.o)));
+  dom.o.onchange=onO;dom.m.onchange=onM;dom.p.onchange=onP;dom.c.onchange=onC;
+  dom.clr.onclick=resetAll;dom.toggle.onclick=toggleSheet;
+  paintMap();
+}
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initMap();
-      loadExcel();
-    });
-  </script>
+/* --------- Reset helpers ---------- */
+function resetLower(l){
+  if(l<=2){resetSelect(dom.m);removeFlowLine();}
+  if(l<=3)resetSelect(dom.p);
+  if(l<=4){resetSelect(dom.c);dom.sum.classList.add('hidden');dom.kwBox.classList.add('hidden');}
+}
+const resetAll=()=>{dom.o.value='Select';resetLower(1);paintMap();};
+
+/* --------- Event handlers ---------- */
+function onO(){ if(dom.o.value==='Select')return resetLower(1);
+  resetLower(2);resetSelect(dom.m,uniq(data.filter(d=>d.o===dom.o.value).map(d=>d.m)));paintMap();}
+function onM(){ if(dom.m.value==='Select')return resetLower(2);
+  resetLower(3);resetSelect(dom.p,uniq(data.filter(d=>d.o===dom.o.value&&d.m===dom.m.value).map(d=>d.p)));paintMap();}
+function onP(){ if(dom.p.value==='Select')return resetLower(3);
+  resetLower(4);resetSelect(dom.c,uniq(data.filter(d=>d.o===dom.o.value&&d.m===dom.m.value&&d.p===dom.p.value).map(d=>d.s)));paintMap();}
+function onC(){
+  if(dom.c.value==='Select')return;
+  const rec=data.find(d=>d.o===dom.o.value&&d.m===dom.m.value&&d.p===dom.p.value&&d.s===dom.c.value);
+  dom.d1.textContent=rec?`“${rec.d1}”`:'';dom.kw.textContent=rec?rec.kw:'';
+  dom.sum.classList.remove('hidden');dom.kwBox.classList.remove('hidden');paintMap();
+}
+function toggleSheet(){
+  currentSheet=currentSheet==='Sentiment'?'Hate Speech':'Sentiment';
+  readyData=false;data=[];removeFlowLine();resetAll();updateLabel();loadExcel();
+}
+
+/* --------- Map colouring ---------- */
+function paintMap(){
+  const o=dom.o.value,m=dom.m.value;
+  const stage=(o==='Select')?0:(m==='Select'?1:2);
+
+  countriesLayer.eachLayer(l=>{
+    const n=l.options.stdName||l.feature.properties.name;
+    let fill=COLORS.BASE,weight=1;l.options.isSelectable=false;l.options.isChosen=false;
+
+    if(stage===0&&data.some(d=>d.o===n)){fill=COLORS.SEL;l.options.isSelectable=true;}
+    else if(stage===1){
+      if(n===o){fill=COLORS.HL;weight=3;l.options.isChosen=true;}
+      else if(data.some(d=>d.o===o&&d.m===n)){fill=COLORS.SEL;l.options.isSelectable=true;}
+    }else if(stage===2&&(n===o||n===m)){fill=COLORS.HL;weight=3;l.options.isChosen=true;}
+
+    l.setStyle({fillColor:fill,weight});
+  });
+
+  if(stage===2)drawFlowLine(o,m);else removeFlowLine();
+}
+
+/* --------- Country click shortcut ---------- */
+function countryClick(n){
+  if(dom.c.value!=='Select')return;
+  if(dom.o.value==='Select'&&[...dom.o.options].some(o=>o.text===n)){dom.o.value=n;onO();return;}
+  if(dom.m.value==='Select'&&[...dom.m.options].some(o=>o.text===n)){dom.m.value=n;onM();}
+}
+
+/* =============== Entry point =============== */
+window.addEventListener('DOMContentLoaded',()=>{initMap();loadExcel();});
+</script>
 </body>
 </html>
